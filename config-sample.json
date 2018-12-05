@@ -1,0 +1,11 @@
+{
+    "AUTH": {
+        "_comment": "Discord bot token (via app > bot account).",
+        "TOKEN": ""
+    },
+    "CHANNELS": {
+        "_comment": "CALL_IN channel listens for !call command. SCREENING channel is for hosts to review callers.",
+        "CALL_IN": "",
+        "SCREENING": ""
+    }
+}
