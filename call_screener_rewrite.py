@@ -86,7 +86,9 @@ async def is_live_show_happening(ctx):
     members = show_channel.members
     member_ids = [member.id for member in members]
 
-    if set(HOST_IDS).issubset(member_ids):
+    # Check if at least one host is in the live channel
+    hosts_in_channel = [host for host in HOST_IDS if host in member_ids]
+    if len(hosts_in_channel) > 0:
         return True
     else:
         nonlive_channel = bot.get_channel(NONLIVE_CHANNEL_ID)
