@@ -28,8 +28,7 @@ CALLER_ROLE_ID = config['ROLES']['LIVE_CALLER_ID']
 # Below cogs represents our folder our cogs are in.
 # Following is the file name. So 'meme.py' in cogs, would be cogs.meme
 # Think of it like a dot path import
-initial_extensions = ['cogs.error',
-                      'cogs.hosts']
+initial_extensions = ['cogs.error']
 
 logging.basicConfig(
     level=logging.INFO,
