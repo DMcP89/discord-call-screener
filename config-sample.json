@@ -34,5 +34,8 @@
         "_comment": "The HOST_ROLE_ID is the role_id of the show hosts. The LIVE_CALLED_ID is the role with speak privs in the voice channel.",
         "HOST_ROLE_ID": 123456789123456789,
         "LIVE_CALLER_ID": 123456789123456789
+    },
+    "SERVER": {
+        "ID": 123456789123456789
     }
 }

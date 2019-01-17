@@ -6,6 +6,8 @@ import asyncio
 import discord
 from discord.ext import commands
 
+import role_checker
+
 description = 'A Discord call-screening bot for live radio shows.'
 
 with open('config.json', 'r') as f:
@@ -166,16 +168,34 @@ async def gather_caller_info(author):
         await author.send('Awesome - thanks! Your message has been sent '
                           'and you will be notified when you are dialed into the live show!')
 
+
+def role_check():
+    logging.info("Checking if roles are available")
+    are_roles_available, missing_roles = role_checker.find_roles([str(HOST_ROLE_ID), str(CALLER_ROLE_ID)])
+    if are_roles_available:
+        logging.info("All required roles are available")
+        return
+    else:
+        logging.info("Server is missing roles: " + missing_roles)
+        create_missing_roles(missing_roles)
+
+
+def create_missing_roles(missing_roles):
+    logging.info("Creating roles")
+    # Here is were we'll handle creating anything that's missing
+
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Bot Commands
 # ------------------------------------------------------------------------------
+
 
 @bot.event
 async def on_ready():
     logging.info("Logged in as: %s", bot.user.name)
     logging.info('Version: %s', discord.__version__)
     logging.info('-' * 10)
+
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="the phones."))
 
 
