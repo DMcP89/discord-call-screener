@@ -30,7 +30,7 @@ def find_roles():
             caller_found = True
 
     if caller_found and host_found:
-        return {'TEST': False}
+        return {}
     else:
         return {'HOST': host_found, 'CALLER': caller_found}
 
