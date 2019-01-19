@@ -48,6 +48,7 @@ if __name__ == '__main__':
             logging.error("Failed to load extension %s.", extension)
             traceback.print_exc()
 
+
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Helper Check Decorators
@@ -56,7 +57,9 @@ if __name__ == '__main__':
 def is_in_channel(id):
     async def predicate(ctx):
         return isinstance(ctx.channel, discord.TextChannel) and ctx.message.channel.id == id
+
     return commands.check(predicate)
+
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -64,23 +67,24 @@ def is_in_channel(id):
 # ------------------------------------------------------------------------------
 
 def name(member):
-        # A helper function to return the member's display name
-        nick = name = None
-        try:
-            nick = member.nick
-        except AttributeError:
-            pass
+    # A helper function to return the member's display name
+    nick = name = None
+    try:
+        nick = member.nick
+    except AttributeError:
+        pass
 
-        try:
-            name = member.name
-        except AttributeError:
-            pass
+    try:
+        name = member.name
+    except AttributeError:
+        pass
 
-        if nick:
-            return nick
-        if name:
-            return name
-        return None
+    if nick:
+        return nick
+    if name:
+        return name
+    return None
+
 
 async def is_live_show_happening(ctx):
     show_channel = bot.get_channel(SHOW_CHANNEL_ID)
@@ -153,13 +157,13 @@ async def gather_caller_info(author):
     # Send confirmation message
     caller_details = f'{caller_name} from {caller_location} wants to talk about - {caller_topic}'
     await author.send(f'We will send the following message to the live show screening channel.\n'
-                                       f'`{caller_details}`\n\nIf this is correct, reply with the word YES.')
+                      f'`{caller_details}`\n\nIf this is correct, reply with the word YES.')
     caller_confirm = await bot.wait_for('message', timeout=30, check=check)
 
     if 'YES' in caller_confirm.content.upper():
         e = discord.Embed(title='NEW CALLER ALERT!', description=caller_details)
         # e.set_thumbnail(url=author.avatar_url)
-        e.add_field(name='\a', value='\a', inline=False)    # Blank line (empty field)
+        e.add_field(name='\a', value='\a', inline=False)  # Blank line (empty field)
         e.add_field(name='To add the caller:', value=f"!{config['COMMANDS']['answer']} {author.mention}", inline=False)
         e.add_field(name='To remove the caller:', value=f"!{config['COMMANDS']['answer']}", inline=False)
 
@@ -184,14 +188,16 @@ async def create_missing_roles(missing_roles):
     logging.info("Creating roles...")
     # Here is were we'll handle creating anything that's missing
     for role in missing_roles:
-         role_name = config['ROLES'][role]['name']
-         logging.info("Creating Role: "+role_name)
-         await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
+        role_name = config['ROLES'][role]['name']
+        logging.info("Creating Role: " + role_name)
+        await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
 
 
 def update_config_file():
     # Need to update config file with new roles
     return
+
+
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Bot Commands
@@ -224,7 +230,6 @@ async def on_voice_state_update(member, before, after):
     if after.channel == show_channel and is_live_caller:
         msg_user_voice = f"Live Caller '{name(member)}' has joined the Live Show voice channel!"
         await screening_channel.send(msg_user_voice)
-
 
 
 @bot.command(name=config['COMMANDS']['call'])
@@ -285,5 +290,6 @@ async def hangup(ctx):
 
     # Remove all members from the Live Callers role
     await clean_livecallers(ctx)
+
 
 bot.run(TOKEN, bot=True, reconnect=True)
