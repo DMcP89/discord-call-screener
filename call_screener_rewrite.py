@@ -24,8 +24,8 @@ SHOW_CHANNEL_NAME = config['CHANNELS']['VOICE']['name']
 SHOW_CHANNEL_ID = config['CHANNELS']['VOICE']['id']
 
 HOST_IDS = config['HOSTS']
-HOST_ROLE_ID = config['ROLES']['HOST_ROLE_ID']
-CALLER_ROLE_ID = config['ROLES']['LIVE_CALLER_ID']
+HOST_ROLE_ID = config['ROLES']['HOST']['id']
+CALLER_ROLE_ID = config['ROLES']['CALLER']['id']
 
 # Below cogs represents our folder our cogs are in.
 # Following is the file name. So 'meme.py' in cogs, would be cogs.meme
@@ -169,21 +169,29 @@ async def gather_caller_info(author):
                           'and you will be notified when you are dialed into the live show!')
 
 
-def role_check():
+async def role_check():
     logging.info("Checking if roles are available")
-    are_roles_available, missing_roles = role_checker.find_roles([str(HOST_ROLE_ID), str(CALLER_ROLE_ID)])
-    if are_roles_available:
+    missing_roles = role_checker.find_roles()
+    if missing_roles:
+        logging.info("Server is missing roles: ".join(missing_roles))
+        await create_missing_roles(missing_roles)
+    else:
         logging.info("All required roles are available")
         return
-    else:
-        logging.info("Server is missing roles: " + missing_roles)
-        create_missing_roles(missing_roles)
 
 
-def create_missing_roles(missing_roles):
-    logging.info("Creating roles")
+async def create_missing_roles(missing_roles):
+    logging.info("Creating roles...")
     # Here is were we'll handle creating anything that's missing
+    for role in missing_roles:
+         role_name = config['ROLES'][role]['name']
+         logging.info("Creating Role: "+role_name)
+         await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
 
+
+def update_config_file():
+    # Need to update config file with new roles
+    return
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Bot Commands
@@ -195,7 +203,7 @@ async def on_ready():
     logging.info("Logged in as: %s", bot.user.name)
     logging.info('Version: %s', discord.__version__)
     logging.info('-' * 10)
-    role_check()
+    await role_check()
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="the phones."))
 
 

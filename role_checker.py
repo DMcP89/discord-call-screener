@@ -6,6 +6,7 @@ with open('config.json', 'r') as f:
 
 TOKEN = config['AUTH']['TOKEN']
 SERVER_ID = config['SERVER']['ID']
+ROLES = config['ROLES']
 
 
 def get_roles_from_server():
@@ -19,17 +20,19 @@ def get_roles_from_server():
     return roles_data
 
 
-def find_roles(target_roles):
-    found_roles = []
+def find_roles():
+    caller_found = False
+    host_found = False
     for role in get_roles_from_server():
-        if role["id"] in target_roles:
-            found_roles.append(role["id"])
-            target_roles.remove(role["id"])
+        if role['id'] == str(ROLES['HOST']['id']):
+            host_found = True
+        elif role['id'] == str(ROLES['CALLER']['id']):
+            caller_found = True
 
-    if len(target_roles) == 0:
-        return True, target_roles
+    if caller_found and host_found:
+        return {'TEST': False}
     else:
-        return False, target_roles
+        return {'HOST': host_found, 'CALLER': caller_found}
 
 # if __name__ == '__main__':
 #     print(find_roles([str(458818918169968640), str(519697126557745153)]))
