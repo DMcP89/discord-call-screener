@@ -188,9 +188,31 @@ async def create_missing_roles(missing_roles):
     logging.info("Creating roles...")
     # Here is were we'll handle creating anything that's missing
     for role in missing_roles:
-        role_name = config['ROLES'][role]['name']
-        logging.info("Creating Role: " + role_name)
-        await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
+        if not missing_roles[role]:
+            role_name = config['ROLES'][role]['name']
+            logging.info("Creating Role: " + role_name)
+            if role == 'HOST':
+                perms = discord.PermissionOverwrite(
+                    connect=True,
+                    speak=True,
+                    mute_members=True,
+                    deafen_members=True,
+                    move_members=True,
+                    use_voice_activation=True,
+                    priority_speaker=True
+                )
+                new_role = await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
+                HOST_ROLE_ID = new_role.id
+            else:
+                perms = discord.PermissionOverwrite(
+                    connect=True,
+                    speak=True,
+                    use_voice_activation=True
+                )
+                new_role = await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
+                CALLER_ROLE_ID = new_role.id
+
+            await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(new_role, overwrite=perms)
 
 
 def update_config_file():
