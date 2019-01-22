@@ -214,6 +214,20 @@ async def create_missing_roles(missing_roles):
 
             await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(new_role, overwrite=perms)
 
+async def add_bot_to_channel():
+    bot_user = bot.get_guild(config['SERVER']['ID']).get_member(config['AUTH']['CLIENT_ID'])
+    live_channel =bot.get_channel(config['CHANNELS']['VOICE']['id'])
+    channel_roles = live_channel.overwrites
+    for role in channel_roles:
+        if role[0] == bot_user.top_role:
+            logging.info("Bot's role Already present on live Channel")
+            return
+    bot_perms = discord.PermissionOverwrite(
+        manage_roles=True,
+        manage_channels=True
+    )
+    await live_channel.set_permissions(bot_user.top_role, overwrite=bot_perms)
+
 
 def update_config_file():
     # Need to update config file with new roles
@@ -231,6 +245,7 @@ async def on_ready():
     logging.info("Logged in as: %s", bot.user.name)
     logging.info('Version: %s', discord.__version__)
     logging.info('-' * 10)
+    await add_bot_to_channel()
     await role_check()
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="the phones."))
 
