@@ -211,11 +211,12 @@ async def create_missing_roles(missing_roles):
                 )
                 new_role = await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
                 CALLER_ROLE_ID = new_role.id
-
+            update_config_file_role_ids()
             await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(new_role, overwrite=perms)
 
 async def add_bot_to_channel():
-    bot_user = bot.get_guild(config['SERVER']['ID']).get_member(config['AUTH']['CLIENT_ID'])
+    bot_info = await bot.application_info()
+    bot_user = bot.get_guild(config['SERVER']['ID']).get_member(bot_info.id)
     live_channel =bot.get_channel(config['CHANNELS']['VOICE']['id'])
     channel_roles = live_channel.overwrites
     for role in channel_roles:
@@ -229,8 +230,12 @@ async def add_bot_to_channel():
     await live_channel.set_permissions(bot_user.top_role, overwrite=bot_perms)
 
 
-def update_config_file():
+def update_config_file_role_ids():
     # Need to update config file with new roles
+    config['ROLES']['HOST']['id'] = HOST_ROLE_ID
+    config['ROLES']['CALLER']['id'] = CALLER_ROLE_ID
+    with open("config.json", "w") as jsonFile:
+        json.dump(config, jsonFile)
     return
 
 
