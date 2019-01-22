@@ -6,6 +6,8 @@ import asyncio
 import discord
 from discord.ext import commands
 
+import role_checker
+
 description = 'A Discord call-screening bot for live radio shows.'
 
 with open('config.json', 'r') as f:
@@ -22,14 +24,13 @@ SHOW_CHANNEL_NAME = config['CHANNELS']['VOICE']['name']
 SHOW_CHANNEL_ID = config['CHANNELS']['VOICE']['id']
 
 HOST_IDS = config['HOSTS']
-HOST_ROLE_ID = config['ROLES']['HOST_ROLE_ID']
-CALLER_ROLE_ID = config['ROLES']['LIVE_CALLER_ID']
+HOST_ROLE_ID = config['ROLES']['HOST']['id']
+CALLER_ROLE_ID = config['ROLES']['CALLER']['id']
 
 # Below cogs represents our folder our cogs are in.
 # Following is the file name. So 'meme.py' in cogs, would be cogs.meme
 # Think of it like a dot path import
-initial_extensions = ['cogs.error',
-                      'cogs.hosts']
+initial_extensions = ['cogs.error']
 
 logging.basicConfig(
     level=logging.INFO,
@@ -47,6 +48,7 @@ if __name__ == '__main__':
             logging.error("Failed to load extension %s.", extension)
             traceback.print_exc()
 
+
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Helper Check Decorators
@@ -55,7 +57,9 @@ if __name__ == '__main__':
 def is_in_channel(id):
     async def predicate(ctx):
         return isinstance(ctx.channel, discord.TextChannel) and ctx.message.channel.id == id
+
     return commands.check(predicate)
+
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -63,23 +67,24 @@ def is_in_channel(id):
 # ------------------------------------------------------------------------------
 
 def name(member):
-        # A helper function to return the member's display name
-        nick = name = None
-        try:
-            nick = member.nick
-        except AttributeError:
-            pass
+    # A helper function to return the member's display name
+    nick = name = None
+    try:
+        nick = member.nick
+    except AttributeError:
+        pass
 
-        try:
-            name = member.name
-        except AttributeError:
-            pass
+    try:
+        name = member.name
+    except AttributeError:
+        pass
 
-        if nick:
-            return nick
-        if name:
-            return name
-        return None
+    if nick:
+        return nick
+    if name:
+        return name
+    return None
+
 
 async def is_live_show_happening(ctx):
     show_channel = bot.get_channel(SHOW_CHANNEL_ID)
@@ -152,13 +157,13 @@ async def gather_caller_info(author):
     # Send confirmation message
     caller_details = f'{caller_name} from {caller_location} wants to talk about - {caller_topic}'
     await author.send(f'We will send the following message to the live show screening channel.\n'
-                                       f'`{caller_details}`\n\nIf this is correct, reply with the word YES.')
+                      f'`{caller_details}`\n\nIf this is correct, reply with the word YES.')
     caller_confirm = await bot.wait_for('message', timeout=30, check=check)
 
     if 'YES' in caller_confirm.content.upper():
         e = discord.Embed(title='NEW CALLER ALERT!', description=caller_details)
         # e.set_thumbnail(url=author.avatar_url)
-        e.add_field(name='\a', value='\a', inline=False)    # Blank line (empty field)
+        e.add_field(name='\a', value='\a', inline=False)  # Blank line (empty field)
         e.add_field(name='To add the caller:', value=f"!{config['COMMANDS']['answer']} {author.mention}", inline=False)
         e.add_field(name='To remove the caller:', value=f"!{config['COMMANDS']['answer']}", inline=False)
 
@@ -167,16 +172,81 @@ async def gather_caller_info(author):
         await author.send('Awesome - thanks! Your message has been sent '
                           'and you will be notified when you are dialed into the live show!')
 
+
+async def role_check():
+    logging.info("Checking if roles are available")
+    missing_roles = role_checker.find_roles()
+    if missing_roles:
+        logging.info("Server is missing roles: ".join(missing_roles))
+        await create_missing_roles(missing_roles)
+    else:
+        logging.info("All required roles are available")
+        return
+
+
+async def create_missing_roles(missing_roles):
+    logging.info("Creating roles...")
+    # Here is were we'll handle creating anything that's missing
+    for role in missing_roles:
+        if not missing_roles[role]:
+            role_name = config['ROLES'][role]['name']
+            logging.info("Creating Role: " + role_name)
+            if role == 'HOST':
+                perms = discord.PermissionOverwrite(
+                    connect=True,
+                    speak=True,
+                    mute_members=True,
+                    deafen_members=True,
+                    move_members=True,
+                    use_voice_activation=True,
+                    priority_speaker=True
+                )
+                new_role = await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
+                HOST_ROLE_ID = new_role.id
+            else:
+                perms = discord.PermissionOverwrite(
+                    connect=True,
+                    speak=True,
+                    use_voice_activation=True
+                )
+                new_role = await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
+                CALLER_ROLE_ID = new_role.id
+
+            await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(new_role, overwrite=perms)
+
+async def add_bot_to_channel():
+    bot_user = bot.get_guild(config['SERVER']['ID']).get_member(config['AUTH']['CLIENT_ID'])
+    live_channel =bot.get_channel(config['CHANNELS']['VOICE']['id'])
+    channel_roles = live_channel.overwrites
+    for role in channel_roles:
+        if role[0] == bot_user.top_role:
+            logging.info("Bot's role Already present on live Channel")
+            return
+    bot_perms = discord.PermissionOverwrite(
+        manage_roles=True,
+        manage_channels=True
+    )
+    await live_channel.set_permissions(bot_user.top_role, overwrite=bot_perms)
+
+
+def update_config_file():
+    # Need to update config file with new roles
+    return
+
+
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Bot Commands
 # ------------------------------------------------------------------------------
+
 
 @bot.event
 async def on_ready():
     logging.info("Logged in as: %s", bot.user.name)
     logging.info('Version: %s', discord.__version__)
     logging.info('-' * 10)
+    await add_bot_to_channel()
+    await role_check()
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="the phones."))
 
 
@@ -197,7 +267,6 @@ async def on_voice_state_update(member, before, after):
     if after.channel == show_channel and is_live_caller:
         msg_user_voice = f"Live Caller '{name(member)}' has joined the Live Show voice channel!"
         await screening_channel.send(msg_user_voice)
-
 
 
 @bot.command(name=config['COMMANDS']['call'])
@@ -258,5 +327,6 @@ async def hangup(ctx):
 
     # Remove all members from the Live Callers role
     await clean_livecallers(ctx)
+
 
 bot.run(TOKEN, bot=True, reconnect=True)
