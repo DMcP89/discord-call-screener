@@ -1,7 +1,10 @@
+import os
 import json
 import requests
 
-with open('config.json', 'r') as f:
+dir_path = os.path.dirname(os.path.realpath(__file__))
+
+with open(dir_path+'/config.json', 'r') as f:
     config = json.load(f)
 
 TOKEN = config['AUTH']['TOKEN']

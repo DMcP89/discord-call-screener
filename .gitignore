@@ -108,3 +108,7 @@ venv.bak/
 
 # PyCharm
 .idea/
+
+bot.pid
+bot.log
+nohup.out

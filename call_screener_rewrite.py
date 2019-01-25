@@ -1,3 +1,4 @@
+import os
 import json
 import logging
 import traceback
@@ -10,7 +11,9 @@ import role_checker
 
 description = 'A Discord call-screening bot for live radio shows.'
 
-with open('config.json', 'r') as f:
+dir_path = os.path.dirname(os.path.realpath(__file__))
+print('dir_path: '+dir_path)
+with open(dir_path+'/config.json', 'r') as f:
     config = json.load(f)
 
 TOKEN = config['AUTH']['TOKEN']
