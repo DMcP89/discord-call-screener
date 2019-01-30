@@ -9,7 +9,8 @@
     "COMMANDS": {
         "call": "call",
         "answer": "answer",
-        "hangup": "drop"
+        "hangup": "drop",
+        "start": "startshow"
     },
     "CHANNELS": {
         "_comment": "CALL_IN channel listens for !call command. SCREENING channel is for hosts to review callers.",
