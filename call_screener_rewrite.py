@@ -180,7 +180,6 @@ async def role_check():
     logging.info("Checking if roles are available")
     missing_roles = role_checker.find_roles()
     if missing_roles:
-        logging.info("Server is missing roles: ".join(missing_roles))
         await create_missing_roles(missing_roles)
     else:
         logging.info("All required roles are available")
@@ -202,17 +201,25 @@ async def create_missing_roles(missing_roles):
                     deafen_members=True,
                     move_members=True,
                     use_voice_activation=True,
-                    priority_speaker=True
+                    priority_speaker=True,
+                    read_messages=True
                 )
                 new_role = await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
+                global HOST_ROLE_ID
                 HOST_ROLE_ID = new_role.id
             else:
                 perms = discord.PermissionOverwrite(
                     connect=True,
                     speak=True,
-                    use_voice_activation=True
+                    mute_members=False,
+                    deafen_members=False,
+                    move_members=False,
+                    use_voice_activation=True,
+                    priority_speaker=False,
+                    read_messages=True
                 )
                 new_role = await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
+                global CALLER_ROLE_ID
                 CALLER_ROLE_ID = new_role.id
             update_config_file_role_ids()
             await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(new_role, overwrite=perms)
@@ -255,6 +262,7 @@ async def on_ready():
     logging.info('-' * 10)
     await add_bot_to_channel()
     await role_check()
+    logging.info('Role Check complete')
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="the phones."))
 
 
@@ -263,7 +271,7 @@ async def on_voice_state_update(member, before, after):
     live_caller_role = discord.utils.find(lambda m: m.id == CALLER_ROLE_ID, member.guild.roles)
     screening_channel = discord.utils.find(lambda m: m.id == SCREENING_CHANNEL_ID, member.guild.channels)
     show_channel = discord.utils.find(lambda m: m.id == SHOW_CHANNEL_ID, member.guild.channels)
-    is_live_caller = bool(member in live_caller_role.members)
+    is_live_caller = bool(live_caller_role is not None and member in live_caller_role.members)
 
     # If a Live Caller drops from a voice channel
     if after.channel != show_channel and is_live_caller:
@@ -336,5 +344,23 @@ async def hangup(ctx):
     # Remove all members from the Live Callers role
     await clean_livecallers(ctx)
 
+
+@bot.command(name=config['COMMANDS']['start'])
+@commands.has_role(HOST_ROLE_ID)
+@is_in_channel(SCREENING_CHANNEL_ID)
+async def start_show(ctx):
+    logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
+    print(ctx.guild.default_role)
+    perms = discord.PermissionOverwrite(
+        connect=True,
+        speak=False,
+        mute_members=False,
+        deafen_members=False,
+        move_members=False,
+        use_voice_activation=False,
+        priority_speaker=False,
+        read_messages=True
+    )
+    await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(ctx.guild.default_role, overwrite=perms)
 
 bot.run(TOKEN, bot=True, reconnect=True)
