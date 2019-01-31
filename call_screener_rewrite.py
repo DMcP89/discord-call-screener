@@ -168,7 +168,7 @@ async def gather_caller_info(author):
         # e.set_thumbnail(url=author.avatar_url)
         e.add_field(name='\a', value='\a', inline=False)  # Blank line (empty field)
         e.add_field(name='To add the caller:', value=f"!{config['COMMANDS']['answer']} {author.mention}", inline=False)
-        e.add_field(name='To remove the caller:', value=f"!{config['COMMANDS']['answer']}", inline=False)
+        e.add_field(name='To remove the caller:', value=f"!{config['COMMANDS']['hangup']}", inline=False)
 
         screening_channel = bot.get_channel(SCREENING_CHANNEL_ID)
         await screening_channel.send(embed=e)
@@ -350,7 +350,6 @@ async def hangup(ctx):
 @is_in_channel(SCREENING_CHANNEL_ID)
 async def start_show(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
-    print(ctx.guild.default_role)
     perms = discord.PermissionOverwrite(
         connect=True,
         speak=False,
@@ -362,5 +361,24 @@ async def start_show(ctx):
         read_messages=True
     )
     await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(ctx.guild.default_role, overwrite=perms)
+
+
+@bot.command(name=config['COMMANDS']['end'])
+@commands.has_role(HOST_ROLE_ID)
+@is_in_channel(SCREENING_CHANNEL_ID)
+async def end_show(ctx):
+    logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
+    perms = discord.PermissionOverwrite(
+        connect=False,
+        speak=False,
+        mute_members=False,
+        deafen_members=False,
+        move_members=False,
+        use_voice_activation=False,
+        priority_speaker=False,
+        read_messages=False
+    )
+    await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(ctx.guild.default_role, overwrite=perms)
+    await clean_livecallers(ctx)
 
 bot.run(TOKEN, bot=True, reconnect=True)
