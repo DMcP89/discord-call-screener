@@ -249,6 +249,21 @@ def update_config_file_role_ids():
     return
 
 
+def channel_check():
+    if bot.get_channel(CALL_IN_CHANNEL_ID) is None:
+        logging.info("Call in Channel Missing")
+
+    if bot.get_channel(NONLIVE_CHANNEL_ID) is None:
+        logging.info("Non-live Channel Missing")
+
+    if bot.get_channel(SCREENING_CHANNEL_ID) is None:
+        logging.info("Screening Channel Missing")
+
+    if bot.get_channel(SHOW_CHANNEL_ID) is None:
+        logging.info("Show Channel Missing")
+
+    return
+
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Bot Commands
@@ -260,6 +275,7 @@ async def on_ready():
     logging.info("Logged in as: %s", bot.user.name)
     logging.info('Version: %s', discord.__version__)
     logging.info('-' * 10)
+    channel_check()
     await add_bot_to_channel()
     await role_check()
     logging.info('Role Check complete')
