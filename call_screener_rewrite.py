@@ -249,18 +249,23 @@ def update_config_file_role_ids():
     return
 
 
-def channel_check():
+async def channel_check():
+    guild = bot.get_guild(config['SERVER']['ID'])
     if bot.get_channel(CALL_IN_CHANNEL_ID) is None:
         logging.info("Call in Channel Missing")
+        await guild.create_text_channel(CALL_IN_CHANNEL_NAME)
 
     if bot.get_channel(NONLIVE_CHANNEL_ID) is None:
         logging.info("Non-live Channel Missing")
+        await guild.create_text_channel(NONLIVE_CHANNEL_NAME)
 
     if bot.get_channel(SCREENING_CHANNEL_ID) is None:
         logging.info("Screening Channel Missing")
+        await guild.create_text_channel(SCREENING_CHANNEL_NAME)
 
     if bot.get_channel(SHOW_CHANNEL_ID) is None:
         logging.info("Show Channel Missing")
+        await guild.create_text_channel(SHOW_CHANNEL_NAME)
 
     return
 
@@ -275,7 +280,7 @@ async def on_ready():
     logging.info("Logged in as: %s", bot.user.name)
     logging.info('Version: %s', discord.__version__)
     logging.info('-' * 10)
-    channel_check()
+    await channel_check()
     await add_bot_to_channel()
     await role_check()
     logging.info('Role Check complete')
