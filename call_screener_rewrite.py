@@ -249,24 +249,46 @@ def update_config_file_role_ids():
     return
 
 
+def update_config_file_channel_ids():
+    # Need to update config file with new channels
+    config['CHANNELS']['CALL_IN']['id'] = CALL_IN_CHANNEL_ID
+    config['CHANNELS']['NONLIVE']['id'] = NONLIVE_CHANNEL_ID
+    config['CHANNELS']['SCREENING']['id'] = SCREENING_CHANNEL_ID
+    config['CHANNELS']['VOICE']['id'] = SHOW_CHANNEL_ID
+    with open("config.json", "w") as jsonFile:
+        json.dump(config, jsonFile)
+    return
+
+
 async def channel_check():
     guild = bot.get_guild(config['SERVER']['ID'])
+
+    global CALL_IN_CHANNEL_ID
+    global NONLIVE_CHANNEL_ID
+    global SCREENING_CHANNEL_ID
+    global SHOW_CHANNEL_ID
+
     if bot.get_channel(CALL_IN_CHANNEL_ID) is None:
         logging.info("Call in Channel Missing")
-        await guild.create_text_channel(CALL_IN_CHANNEL_NAME)
+        call_in_channel = await guild.create_text_channel(CALL_IN_CHANNEL_NAME)
+        CALL_IN_CHANNEL_ID = call_in_channel.id
 
     if bot.get_channel(NONLIVE_CHANNEL_ID) is None:
         logging.info("Non-live Channel Missing")
-        await guild.create_text_channel(NONLIVE_CHANNEL_NAME)
+        non_live_channel = await guild.create_text_channel(NONLIVE_CHANNEL_NAME)
+        NONLIVE_CHANNEL_ID = non_live_channel.id
 
     if bot.get_channel(SCREENING_CHANNEL_ID) is None:
         logging.info("Screening Channel Missing")
-        await guild.create_text_channel(SCREENING_CHANNEL_NAME)
+        screening_channel = await guild.create_text_channel(SCREENING_CHANNEL_NAME)
+        SCREENING_CHANNEL_ID = screening_channel.id
 
     if bot.get_channel(SHOW_CHANNEL_ID) is None:
         logging.info("Show Channel Missing")
-        await guild.create_text_channel(SHOW_CHANNEL_NAME)
+        show_channel = await guild.create_text_channel(SHOW_CHANNEL_NAME)
+        SHOW_CHANNEL_ID = show_channel.id
 
+    update_config_file_channel_ids()
     return
 
 # ------------------------------------------------------------------------------
