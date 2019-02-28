@@ -275,7 +275,11 @@ async def channel_check():
 
     if bot.get_channel(NONLIVE_CHANNEL_ID) is None:
         logging.info("Non-live Channel Missing")
-        non_live_channel = await guild.create_text_channel(NONLIVE_CHANNEL_NAME)
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649))
+        }
+        print(overwrites[guild.default_role].pair())
+        non_live_channel = await guild.create_text_channel(NONLIVE_CHANNEL_NAME, overwrites=overwrites)
         NONLIVE_CHANNEL_ID = non_live_channel.id
 
     if bot.get_channel(SCREENING_CHANNEL_ID) is None:
@@ -285,7 +289,7 @@ async def channel_check():
 
     if bot.get_channel(SHOW_CHANNEL_ID) is None:
         logging.info("Show Channel Missing")
-        show_channel = await guild.create_text_channel(SHOW_CHANNEL_NAME)
+        show_channel = await guild.create_voice_channel(SHOW_CHANNEL_NAME)
         SHOW_CHANNEL_ID = show_channel.id
 
     update_config_file_channel_ids()
