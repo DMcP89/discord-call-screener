@@ -270,7 +270,12 @@ async def channel_check():
 
     if bot.get_channel(CALL_IN_CHANNEL_ID) is None:
         logging.info("Call in Channel Missing")
-        call_in_channel = await guild.create_text_channel(CALL_IN_CHANNEL_NAME)
+        logging.info(guild.me)
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649)),
+            guild.me: discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649))
+        }
+        call_in_channel = await guild.create_text_channel(CALL_IN_CHANNEL_NAME, overwrites=overwrites)
         CALL_IN_CHANNEL_ID = call_in_channel.id
 
     if bot.get_channel(NONLIVE_CHANNEL_ID) is None:
@@ -278,7 +283,6 @@ async def channel_check():
         overwrites = {
             guild.default_role: discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649))
         }
-        print(overwrites[guild.default_role].pair())
         non_live_channel = await guild.create_text_channel(NONLIVE_CHANNEL_NAME, overwrites=overwrites)
         NONLIVE_CHANNEL_ID = non_live_channel.id
 
