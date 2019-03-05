@@ -57,9 +57,12 @@ if __name__ == '__main__':
 # Helper Check Decorators
 # ------------------------------------------------------------------------------
 
-def is_in_channel(id):
+def is_in_channel(channel_name):
     async def predicate(ctx):
-        return isinstance(ctx.channel, discord.TextChannel) and ctx.message.channel.id == id
+        if channel_name == CALL_IN_CHANNEL_NAME:
+            return isinstance(ctx.channel, discord.TextChannel) and ctx.message.channel.id == CALL_IN_CHANNEL_ID
+        elif channel_name == SCREENING_CHANNEL_NAME:
+            return isinstance(ctx.channel, discord.TextChannel) and ctx.message.channel.id == SCREENING_CHANNEL_ID
 
     return commands.check(predicate)
 
@@ -338,7 +341,7 @@ async def on_voice_state_update(member, before, after):
 
 @bot.command(name=config['COMMANDS']['call'])
 @commands.cooldown(1, 30, commands.BucketType.user)
-@is_in_channel(CALL_IN_CHANNEL_ID)
+@is_in_channel(CALL_IN_CHANNEL_NAME)
 async def call(ctx):
     logging.info("Command '%s' detected in call-in channel (%s).", ctx.command.name, CALL_IN_CHANNEL_NAME)
     # Check if there is a Live Show in Progress
@@ -356,7 +359,7 @@ async def call(ctx):
 
 @bot.command(name=config['COMMANDS']['answer'])
 @commands.has_role(HOST_ROLE_ID)
-@is_in_channel(SCREENING_CHANNEL_ID)
+@is_in_channel(SCREENING_CHANNEL_NAME)
 async def answer(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
 
@@ -388,7 +391,7 @@ async def answer(ctx):
 
 @bot.command(name=config['COMMANDS']['hangup'])
 @commands.has_role(HOST_ROLE_ID)
-@is_in_channel(SCREENING_CHANNEL_ID)
+@is_in_channel(SCREENING_CHANNEL_NAME)
 async def hangup(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
 
@@ -398,7 +401,7 @@ async def hangup(ctx):
 
 @bot.command(name=config['COMMANDS']['start'])
 @commands.has_role(HOST_ROLE_ID)
-@is_in_channel(SCREENING_CHANNEL_ID)
+@is_in_channel(SCREENING_CHANNEL_NAME)
 async def start_show(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
     perms = discord.PermissionOverwrite(
@@ -416,7 +419,7 @@ async def start_show(ctx):
 
 @bot.command(name=config['COMMANDS']['end'])
 @commands.has_role(HOST_ROLE_ID)
-@is_in_channel(SCREENING_CHANNEL_ID)
+@is_in_channel(SCREENING_CHANNEL_NAME)
 async def end_show(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
     perms = discord.PermissionOverwrite(
