@@ -291,12 +291,23 @@ async def channel_check():
 
     if bot.get_channel(SCREENING_CHANNEL_ID) is None:
         logging.info("Screening Channel Missing")
-        screening_channel = await guild.create_text_channel(SCREENING_CHANNEL_NAME)
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite().from_pair(discord.Permissions.none(), discord.Permissions.all()),
+            guild.me: discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649)),
+            guild.get_role(HOST_ROLE_ID): discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649))
+        }
+        screening_channel = await guild.create_text_channel(SCREENING_CHANNEL_NAME, overwrites=overwrites)
         SCREENING_CHANNEL_ID = screening_channel.id
 
     if bot.get_channel(SHOW_CHANNEL_ID) is None:
         logging.info("Show Channel Missing")
-        show_channel = await guild.create_voice_channel(SHOW_CHANNEL_NAME)
+        overwrites = {
+            guild.default_role:discord.PermissionOverwrite().from_pair(discord.Permissions.none(), discord.Permissions.all()),
+            guild.me: discord.PermissionOverwrite().from_pair(discord.Permissions(286262288), discord.Permissions().none()),
+            guild.get_role(HOST_ROLE_ID): discord.PermissionOverwrite().from_pair(discord.Permissions(36701440), discord.Permissions().none()),
+            guild.get_role(CALLER_ROLE_ID): discord.PermissionOverwrite().from_pair(discord.Permissions(36701184), discord.Permissions().none()), 
+        }
+        show_channel = await guild.create_voice_channel(SHOW_CHANNEL_NAME, overwrites=overwrites)
         SHOW_CHANNEL_ID = show_channel.id
 
     update_config_file_channel_ids()
