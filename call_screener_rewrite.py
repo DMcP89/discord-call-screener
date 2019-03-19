@@ -183,6 +183,7 @@ async def role_check():
     logging.info("Checking if roles are available")
     missing_roles = role_checker.find_roles()
     if missing_roles:
+        logging.info("Roles are missing!")
         await create_missing_roles(missing_roles)
     else:
         logging.info("All required roles are available")
