@@ -57,9 +57,12 @@ if __name__ == '__main__':
 # Helper Check Decorators
 # ------------------------------------------------------------------------------
 
-def is_in_channel(id):
+def is_in_channel(channel_name):
     async def predicate(ctx):
-        return isinstance(ctx.channel, discord.TextChannel) and ctx.message.channel.id == id
+        if channel_name == CALL_IN_CHANNEL_NAME:
+            return isinstance(ctx.channel, discord.TextChannel) and ctx.message.channel.id == CALL_IN_CHANNEL_ID
+        elif channel_name == SCREENING_CHANNEL_NAME:
+            return isinstance(ctx.channel, discord.TextChannel) and ctx.message.channel.id == SCREENING_CHANNEL_ID
 
     return commands.check(predicate)
 
@@ -249,24 +252,65 @@ def update_config_file_role_ids():
     return
 
 
+def update_config_file_channel_ids():
+    # Need to update config file with new channels
+    config['CHANNELS']['CALL_IN']['id'] = CALL_IN_CHANNEL_ID
+    config['CHANNELS']['NONLIVE']['id'] = NONLIVE_CHANNEL_ID
+    config['CHANNELS']['SCREENING']['id'] = SCREENING_CHANNEL_ID
+    config['CHANNELS']['VOICE']['id'] = SHOW_CHANNEL_ID
+    with open("config.json", "w") as jsonFile:
+        json.dump(config, jsonFile)
+    return
+
+
 async def channel_check():
     guild = bot.get_guild(config['SERVER']['ID'])
+
+    global CALL_IN_CHANNEL_ID
+    global NONLIVE_CHANNEL_ID
+    global SCREENING_CHANNEL_ID
+    global SHOW_CHANNEL_ID
+
     if bot.get_channel(CALL_IN_CHANNEL_ID) is None:
         logging.info("Call in Channel Missing")
-        await guild.create_text_channel(CALL_IN_CHANNEL_NAME)
+        logging.info(guild.me)
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649)),
+            guild.me: discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649))
+        }
+        call_in_channel = await guild.create_text_channel(CALL_IN_CHANNEL_NAME, overwrites=overwrites)
+        CALL_IN_CHANNEL_ID = call_in_channel.id
 
     if bot.get_channel(NONLIVE_CHANNEL_ID) is None:
         logging.info("Non-live Channel Missing")
-        await guild.create_text_channel(NONLIVE_CHANNEL_NAME)
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649))
+        }
+        non_live_channel = await guild.create_text_channel(NONLIVE_CHANNEL_NAME, overwrites=overwrites)
+        NONLIVE_CHANNEL_ID = non_live_channel.id
 
     if bot.get_channel(SCREENING_CHANNEL_ID) is None:
         logging.info("Screening Channel Missing")
-        await guild.create_text_channel(SCREENING_CHANNEL_NAME)
+        overwrites = {
+            guild.default_role: discord.PermissionOverwrite().from_pair(discord.Permissions.none(), discord.Permissions.all()),
+            guild.me: discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649)),
+            guild.get_role(HOST_ROLE_ID): discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649))
+        }
+        screening_channel = await guild.create_text_channel(SCREENING_CHANNEL_NAME, overwrites=overwrites)
+        SCREENING_CHANNEL_ID = screening_channel.id
 
     if bot.get_channel(SHOW_CHANNEL_ID) is None:
         logging.info("Show Channel Missing")
-        await guild.create_text_channel(SHOW_CHANNEL_NAME)
+        overwrites = {
+            guild.default_role:discord.PermissionOverwrite().from_pair(discord.Permissions.none(), discord.Permissions.all()),
+            guild.me: discord.PermissionOverwrite().from_pair(discord.Permissions(286262288), discord.Permissions().none()),
+            guild.get_role(HOST_ROLE_ID): discord.PermissionOverwrite().from_pair(discord.Permissions(36701440), discord.Permissions().none()),
+            guild.get_role(CALLER_ROLE_ID): discord.PermissionOverwrite().from_pair(discord.Permissions(36701184), discord.Permissions().none()), 
+        }
+        show_channel = await guild.create_voice_channel(SHOW_CHANNEL_NAME, overwrites=overwrites)
+        SHOW_CHANNEL_ID = show_channel.id
 
+    update_config_file_channel_ids()
     return
 
 # ------------------------------------------------------------------------------
@@ -308,7 +352,7 @@ async def on_voice_state_update(member, before, after):
 
 @bot.command(name=config['COMMANDS']['call'])
 @commands.cooldown(1, 30, commands.BucketType.user)
-@is_in_channel(CALL_IN_CHANNEL_ID)
+@is_in_channel(CALL_IN_CHANNEL_NAME)
 async def call(ctx):
     logging.info("Command '%s' detected in call-in channel (%s).", ctx.command.name, CALL_IN_CHANNEL_NAME)
     # Check if there is a Live Show in Progress
@@ -326,7 +370,7 @@ async def call(ctx):
 
 @bot.command(name=config['COMMANDS']['answer'])
 @commands.has_role(HOST_ROLE_ID)
-@is_in_channel(SCREENING_CHANNEL_ID)
+@is_in_channel(SCREENING_CHANNEL_NAME)
 async def answer(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
 
@@ -358,7 +402,7 @@ async def answer(ctx):
 
 @bot.command(name=config['COMMANDS']['hangup'])
 @commands.has_role(HOST_ROLE_ID)
-@is_in_channel(SCREENING_CHANNEL_ID)
+@is_in_channel(SCREENING_CHANNEL_NAME)
 async def hangup(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
 
@@ -368,7 +412,7 @@ async def hangup(ctx):
 
 @bot.command(name=config['COMMANDS']['start'])
 @commands.has_role(HOST_ROLE_ID)
-@is_in_channel(SCREENING_CHANNEL_ID)
+@is_in_channel(SCREENING_CHANNEL_NAME)
 async def start_show(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
     perms = discord.PermissionOverwrite(
@@ -386,7 +430,7 @@ async def start_show(ctx):
 
 @bot.command(name=config['COMMANDS']['end'])
 @commands.has_role(HOST_ROLE_ID)
-@is_in_channel(SCREENING_CHANNEL_ID)
+@is_in_channel(SCREENING_CHANNEL_NAME)
 async def end_show(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
     perms = discord.PermissionOverwrite(
