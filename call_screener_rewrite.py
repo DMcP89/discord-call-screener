@@ -226,7 +226,7 @@ async def create_missing_roles(missing_roles):
                 global CALLER_ROLE_ID
                 CALLER_ROLE_ID = new_role.id
             update_config_file_role_ids()
-            await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(new_role, overwrite=perms)
+            return
 
 async def add_bot_to_channel():
     bot_info = await bot.application_info()
@@ -242,6 +242,7 @@ async def add_bot_to_channel():
         manage_channels=True
     )
     await live_channel.set_permissions(bot_user.top_role, overwrite=bot_perms)
+    return
 
 
 def update_config_file_role_ids():
@@ -313,6 +314,7 @@ async def channel_check():
 
     update_config_file_channel_ids()
     return
+    
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -325,10 +327,11 @@ async def on_ready():
     logging.info("Logged in as: %s", bot.user.name)
     logging.info('Version: %s', discord.__version__)
     logging.info('-' * 10)
-    await channel_check()
+    logging.info('Setting up server')
     await add_bot_to_channel()
     await role_check()
-    logging.info('Role Check complete')
+    await channel_check()
+    logging.info('Server setup complete')
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="the phones."))
 
 
