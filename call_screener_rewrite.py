@@ -315,6 +315,14 @@ async def channel_check():
     update_config_file_channel_ids()
     return
     
+    
+async def serverCheck():
+    logging.info('Setting up server')
+    await add_bot_to_channel()
+    await role_check()
+    await channel_check()
+    logging.info('Server setup complete')    
+    return
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -327,11 +335,7 @@ async def on_ready():
     logging.info("Logged in as: %s", bot.user.name)
     logging.info('Version: %s', discord.__version__)
     logging.info('-' * 10)
-    logging.info('Setting up server')
-    await add_bot_to_channel()
-    await role_check()
-    await channel_check()
-    logging.info('Server setup complete')
+    await serverCheck()
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="the phones."))
 
 
@@ -419,6 +423,7 @@ async def hangup(ctx):
 @is_in_channel(SCREENING_CHANNEL_NAME)
 async def start_show(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
+    await serverCheck()
     perms = discord.PermissionOverwrite(
         connect=True,
         speak=False,
