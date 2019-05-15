@@ -183,6 +183,7 @@ async def role_check():
     logging.info("Checking if roles are available")
     missing_roles = role_checker.find_roles()
     if missing_roles:
+        logging.info("Roles are missing!")
         await create_missing_roles(missing_roles)
     else:
         logging.info("All required roles are available")
@@ -225,7 +226,7 @@ async def create_missing_roles(missing_roles):
                 global CALLER_ROLE_ID
                 CALLER_ROLE_ID = new_role.id
             update_config_file_role_ids()
-            await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(new_role, overwrite=perms)
+            return
 
 async def add_bot_to_channel():
     bot_info = await bot.application_info()
@@ -233,7 +234,7 @@ async def add_bot_to_channel():
     live_channel =bot.get_channel(config['CHANNELS']['VOICE']['id'])
     channel_roles = live_channel.overwrites
     for role in channel_roles:
-        if role[0] == bot_user.top_role:
+        if role == bot_user.top_role:
             logging.info("Bot's role Already present on live Channel")
             return
     bot_perms = discord.PermissionOverwrite(
@@ -241,6 +242,7 @@ async def add_bot_to_channel():
         manage_channels=True
     )
     await live_channel.set_permissions(bot_user.top_role, overwrite=bot_perms)
+    return
 
 
 def update_config_file_role_ids():
@@ -312,7 +314,26 @@ async def channel_check():
 
     update_config_file_channel_ids()
     return
+    
+    
+async def serverCheck():
+    logging.info('Setting up server')
+    await channel_check()
+    await add_bot_to_channel()
+    await role_check()
+    logging.info('Server setup complete')    
+    return
 
+
+# ------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------
+# Recording methods
+# ------------------------------------------------------------------------------
+
+    
+    
+    
+    
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Bot Commands
@@ -324,10 +345,7 @@ async def on_ready():
     logging.info("Logged in as: %s", bot.user.name)
     logging.info('Version: %s', discord.__version__)
     logging.info('-' * 10)
-    await channel_check()
-    await add_bot_to_channel()
-    await role_check()
-    logging.info('Role Check complete')
+    await serverCheck()
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="the phones."))
 
 
@@ -415,6 +433,7 @@ async def hangup(ctx):
 @is_in_channel(SCREENING_CHANNEL_NAME)
 async def start_show(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
+    await serverCheck()
     perms = discord.PermissionOverwrite(
         connect=True,
         speak=False,
