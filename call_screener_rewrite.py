@@ -234,7 +234,7 @@ async def add_bot_to_channel():
     live_channel =bot.get_channel(config['CHANNELS']['VOICE']['id'])
     channel_roles = live_channel.overwrites
     for role in channel_roles:
-        if role[0] == bot_user.top_role:
+        if role == bot_user.top_role:
             logging.info("Bot's role Already present on live Channel")
             return
     bot_perms = discord.PermissionOverwrite(
@@ -318,9 +318,9 @@ async def channel_check():
     
 async def serverCheck():
     logging.info('Setting up server')
+    await channel_check()
     await add_bot_to_channel()
     await role_check()
-    await channel_check()
     logging.info('Server setup complete')    
     return
 
