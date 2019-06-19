@@ -6,8 +6,11 @@ import traceback
 import asyncio
 import discord
 from discord.ext import commands
+from threading import Thread
 
+# local imports
 import role_checker
+import recording_utils
 
 description = 'A Discord call-screening bot for live radio shows.'
 
@@ -41,6 +44,10 @@ logging.basicConfig(
 )
 
 bot = commands.Bot(command_prefix='!', description=description)
+
+recording_thread = None
+recording_buffer = recording_utils.BufSink()
+recording_flag = False
 
 # Here we load our extensions(cogs) listed above in [initial_extensions].
 if __name__ == '__main__':
@@ -329,7 +336,19 @@ async def serverCheck():
 # ------------------------------------------------------------------------------
 # Recording methods
 # ------------------------------------------------------------------------------
-
+def start_recordiing():
+    show_channel = bot.get_channel(SHOW_CHANNEL_ID)
+    
+    if recording_thread is None:
+        recording_thread = Thread(target=recording_utils.poster, args=(bot, recording_buffer, show_channel))
+        recording_thread.start()
+    
+    voice_client_count = 0 
+    for memeber in show_channel.members:
+        user = bot.fetch_user(member.id)
+        bot.voice_clients[voice_client_count].listen(discord.reader.UserFilter(recording_buffer, user))
+        voice_client_count += 1
+    return
     
     
     
