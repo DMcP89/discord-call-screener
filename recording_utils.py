@@ -1,6 +1,7 @@
 import wave
 import discord
 
+recording_finished_flag = False
 
 class BufSink(discord.reader.AudioSink):
     def __init__(self):
@@ -17,17 +18,21 @@ class BufSink(discord.reader.AudioSink):
         self.bytearr_buf = self.bytearr_buf[idx:]
 
 def poster(bot, buffer, target_channel):
-    global close_flag
+    global recording_finished_flag
     # we don't want the thread to end, so just loop forever
     while True:
-        if close_flag:
+        if recording_finished_flag:
+           
             # if the slice isn't all 0s, create an AudioData instance with it,
             # needed by the speech_recognition lib
+            
             if len(buffer.bytearr_buf) > 960000:
+               
                 data = buffer.bytearr_buf
                 # if the slice isn't all 0s, create an AudioData instance with it,
                 # needed by the speech_recognition lib
                 if any(data):
+                    
                     # trim leading zeroes, should be more accurate
                     idx_strip = data.index(next(filter(lambda x: x!=0, data)))
                     if idx_strip:

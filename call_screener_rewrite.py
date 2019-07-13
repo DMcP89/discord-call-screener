@@ -47,7 +47,7 @@ bot = commands.Bot(command_prefix='!', description=description)
 
 recording_thread = None
 recording_buffer = recording_utils.BufSink()
-recording_flag = False
+
 
 # Here we load our extensions(cogs) listed above in [initial_extensions].
 if __name__ == '__main__':
@@ -336,22 +336,16 @@ async def serverCheck():
 # ------------------------------------------------------------------------------
 # Recording methods
 # ------------------------------------------------------------------------------
-def start_recordiing():
-    show_channel = bot.get_channel(SHOW_CHANNEL_ID)
-    
+
+
+def start_recordiing(show_channel):
+    global recording_thread
     if recording_thread is None:
         recording_thread = Thread(target=recording_utils.poster, args=(bot, recording_buffer, show_channel))
         recording_thread.start()
     
-    voice_client_count = 0 
-    for memeber in show_channel.members:
-        user = bot.fetch_user(member.id)
-        bot.voice_clients[voice_client_count].listen(discord.reader.UserFilter(recording_buffer, user))
-        voice_client_count += 1
-    return
-    
-    
-    
+    bot.voice_clients[0].listen(recording_buffer)
+    return   
     
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -464,6 +458,8 @@ async def start_show(ctx):
         read_messages=True
     )
     await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(ctx.guild.default_role, overwrite=perms)
+    await bot.get_channel(SHOW_CHANNEL_ID).connect()
+    start_recordiing(bot.get_channel(SHOW_CHANNEL_ID))
 
 
 @bot.command(name=config['COMMANDS']['end'])
@@ -483,5 +479,11 @@ async def end_show(ctx):
     )
     await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(ctx.guild.default_role, overwrite=perms)
     await clean_livecallers(ctx)
+    if bot.voice_clients:
+        for vc in bot.voice_clients:
+            await vc.disconnect()
+        recording_utils.recording_finished_flag = True
+        global recording_thread
+        recording_thread.join()
 
 bot.run(TOKEN, bot=True, reconnect=True)
