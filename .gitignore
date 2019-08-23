@@ -113,3 +113,4 @@ bot.pid
 bot.log
 nohup.out
 sound.wav
+.vscode/settings.json

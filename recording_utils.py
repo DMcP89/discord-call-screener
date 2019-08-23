@@ -1,7 +1,10 @@
 import wave
 import discord
 
+
 recording_finished_flag = False
+
+recording_filename = "test_recording.wav"
 
 class BufSink(discord.reader.AudioSink):
     def __init__(self):
@@ -17,7 +20,9 @@ class BufSink(discord.reader.AudioSink):
     def freshen(self, idx):
         self.bytearr_buf = self.bytearr_buf[idx:]
 
-def poster(bot, buffer, target_channel):
+def poster(bot, buffer, filename):
+    global recording_filename
+    recording_filename = filename
     global recording_finished_flag
     # we don't want the thread to end, so just loop forever
     while True:
@@ -38,9 +43,12 @@ def poster(bot, buffer, target_channel):
                     if idx_strip:
                         buffer.freshen(idx_strip)
                         data = buffer.bytearr_buf
-                    wavef = wave.open('sound.wav','w')
+                    
+                    wavef = wave.open(filename,'w')
                     wavef.setnchannels(1) # stereo
                     wavef.setsampwidth(buffer.sample_width) 
                     wavef.setframerate(buffer.sample_rate)
                     wavef.writeframesraw(bytes(buffer.bytearr_buf))
+                    wavef.close()
+                    
             break

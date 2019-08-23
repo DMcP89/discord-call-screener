@@ -16,5 +16,6 @@ s3 = boto3.resource(
     aws_secret_access_key=SECRET_KEY
 )
 
-for bucket in s3.buckets.all():
-    print(bucket.name)
+
+def save_recording_to_bucket(bucket, filename):
+    s3.Object(bucket, filename).put(Body=open(filename, 'rb'))

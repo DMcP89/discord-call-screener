@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import traceback
+import time
 
 import asyncio
 import discord
@@ -12,6 +13,7 @@ from threading import Thread
 import role_utils
 import recording_utils
 import channel_utils
+import s3
 
 description = 'A Discord call-screening bot for live radio shows.'
 
@@ -206,10 +208,10 @@ async def serverCheck():
 
 def start_recordiing(show_channel):
     global recording_thread
+    recording_filename = show_channel.name + "-" +time.strftime("%Y%m%d-%H%M%S")+ ".wav"
     if recording_thread is None:
-        recording_thread = Thread(target=recording_utils.poster, args=(bot, recording_buffer, show_channel))
-        recording_thread.start()
-    
+        recording_thread = Thread(target=recording_utils.poster, args=(bot, recording_buffer, recording_filename))
+        recording_thread.start()   
     bot.voice_clients[0].listen(recording_buffer)
     return   
     
@@ -351,5 +353,6 @@ async def end_show(ctx):
         recording_utils.recording_finished_flag = True
         global recording_thread
         recording_thread.join()
+        s3.save_recording_to_bucket("discord-recordings-dev", recording_utils.recording_filename)
 
 bot.run(TOKEN, bot=True, reconnect=True)
