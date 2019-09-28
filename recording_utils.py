@@ -6,6 +6,8 @@ recording_finished_flag = False
 
 recording_filename = "test_recording.wav"
 
+discord.opus.load_opus('libopus.so.0')
+
 class BufSink(discord.reader.AudioSink):
     def __init__(self):
         self.bytearr_buf = bytearray()
