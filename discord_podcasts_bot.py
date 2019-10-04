@@ -13,6 +13,7 @@ from threading import Thread
 import role_utils
 import recording_utils
 import channel_utils
+from podcast_utils import show_utils
 import s3
 
 description = 'A Discord call-screening bot for live radio shows.'
@@ -51,6 +52,7 @@ bot = commands.Bot(command_prefix='!', description=description)
 recording_thread = None
 recording_buffer = recording_utils.BufSink()
 
+show_helper = show_utils(bot, config)
 
 # Here we load our extensions(cogs) listed above in [initial_extensions].
 if __name__ == '__main__':
@@ -193,9 +195,7 @@ async def gather_caller_info(author):
 async def serverCheck():
     logging.info('Setting up server')
     await channel_utils.channel_check(bot)
-    await channel_utils.add_bot_to_channel(bot)
     await role_utils.role_check(bot)
-    #await role_check()
     logging.info('Server setup complete')    
     return
 
@@ -226,7 +226,7 @@ async def on_ready():
     logging.info("Logged in as: %s", bot.user.name)
     logging.info('Version: %s', discord.__version__)
     logging.info('-' * 10)
-    await serverCheck()
+    await show_helper.serverCheck()
     await bot.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name="the phones."))
 
 

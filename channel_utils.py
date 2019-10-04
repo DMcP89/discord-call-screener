@@ -73,6 +73,7 @@ async def channel_check(bot):
         SHOW_CHANNEL_ID = show_channel.id
 
     update_config_file_channel_ids()
+    await add_bot_to_channel(bot)
     return
     
 def update_config_file_channel_ids():
