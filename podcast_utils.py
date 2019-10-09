@@ -5,7 +5,7 @@ import discord
 import role_utils
 import channel_utils
 
-class show_utils:
+class show_helper:
 
     def __init__(self, bot, configs):
         self.bot = bot
@@ -32,16 +32,16 @@ class show_utils:
         return None
 
     async def is_live_show_happening(self, ctx):
-        show_channel = self.bot.get_channel(self.configs['SHOW_CHANNEL_ID'])
+        show_channel = self.bot.get_channel(self.configs['CHANNELS']['VOICE']['id'])
         members = show_channel.members
         member_ids = [member.id for member in members]
 
         # Check if at least one host is in the live channel
-        hosts_in_channel = [host for host in self.configs['HOST_IDS'] if host in member_ids]
+        hosts_in_channel = [host for host in self.configs['HOSTS'] if host in member_ids]
         if len(hosts_in_channel) > 0:
             return True
         else:
-            nonlive_channel = self.bot.get_channel(self.configs['NONLIVE_CHANNEL_ID'])
+            nonlive_channel = self.bot.get_channel(self.configs['CHANNELS']['NONLIVE']['id'])
             nonlive_msg = f'{ctx.author.mention} There is currently no live show. Please post your question in {nonlive_channel.mention} for the next show!'
             await ctx.send(nonlive_msg)
             return False
@@ -55,7 +55,7 @@ class show_utils:
 
     async def clean_and_add_livecallers(self, ctx, user=None):
         # Clean Live Callers of any stale users
-        live_caller_role = discord.utils.find(lambda m: m.id == self.configs['CALLER_ROLE_ID'], ctx.guild.roles)
+        live_caller_role = discord.utils.find(lambda m: m.id == self.configs['ROLES']['CALLER']['id'], ctx.guild.roles)
         logging.info('Found Live Caller Role - %s', live_caller_role)
         for member in live_caller_role.members:
             if member != user:
@@ -68,7 +68,7 @@ class show_utils:
     
     async def clean_livecallers(self, ctx):
         # Clean Live Callers of any stale users
-        live_caller_role = discord.utils.find(lambda m: m.id == self.configs['CALLER_ROLE_ID'], ctx.guild.roles)
+        live_caller_role = discord.utils.find(lambda m: m.id == self.configs['ROLES']['CALLER']['id'], ctx.guild.roles)
         logging.info('Found Live Caller Role - %s', live_caller_role)
         for member in live_caller_role.members:
             await member.remove_roles(live_caller_role)
@@ -105,17 +105,17 @@ class show_utils:
             e = discord.Embed(title='NEW CALLER ALERT!', description=caller_details)
             # e.set_thumbnail(url=author.avatar_url)
             e.add_field(name='\a', value='\a', inline=False)  # Blank line (empty field)
-            e.add_field(name='To add the caller:', value=f"!{self.config['COMMANDS']['answer']} {author.mention}", inline=False)
-            e.add_field(name='To remove the caller:', value=f"!{self.config['COMMANDS']['hangup']}", inline=False)
+            e.add_field(name='To add the caller:', value=f"!{self.configs['COMMANDS']['answer']} {author.mention}", inline=False)
+            e.add_field(name='To remove the caller:', value=f"!{self.configs['COMMANDS']['hangup']}", inline=False)
 
-            screening_channel = self.bot.get_channel(self.config['SCREENING_CHANNEL_ID'])
+            screening_channel = self.bot.get_channel(self.configs['CHANNELS']['SCREENING']['id'])
             await screening_channel.send(embed=e)
             await author.send('Awesome - thanks! Your message has been sent '
                             'and you will be notified when you are dialed into the live show!')
 
     async def serverCheck(self):
         logging.info('Setting up server')
-        await channel_utils.channel_check(self.bot)
         await role_utils.role_check(self.bot)
+        await channel_utils.channel_check(self.bot)
         logging.info('Server setup complete')    
         return

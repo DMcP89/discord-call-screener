@@ -23,6 +23,8 @@ SCREENING_CHANNEL_NAME = config['CHANNELS']['SCREENING']['name']
 SCREENING_CHANNEL_ID = config['CHANNELS']['SCREENING']['id']
 SHOW_CHANNEL_NAME = config['CHANNELS']['VOICE']['name']
 SHOW_CHANNEL_ID = config['CHANNELS']['VOICE']['id']
+HOST_ROLE_ID = config['ROLES']['HOST']['id']
+CALLER_ROLE_ID = config['ROLES']['CALLER']['id']
 
 
 async def channel_check(bot):

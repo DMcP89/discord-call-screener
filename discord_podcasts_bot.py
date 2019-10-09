@@ -13,7 +13,7 @@ from threading import Thread
 import role_utils
 import recording_utils
 import channel_utils
-from podcast_utils import show_utils
+import podcast_utils
 import s3
 
 description = 'A Discord call-screening bot for live radio shows.'
@@ -52,7 +52,7 @@ bot = commands.Bot(command_prefix='!', description=description)
 recording_thread = None
 recording_buffer = recording_utils.BufSink()
 
-show_helper = show_utils(bot, config)
+show_helper = podcast_utils.show_helper(bot, config)
 
 # Here we load our extensions(cogs) listed above in [initial_extensions].
 if __name__ == '__main__':
@@ -77,127 +77,6 @@ def is_in_channel(channel_name):
             return isinstance(ctx.channel, discord.TextChannel) and ctx.message.channel.id == SCREENING_CHANNEL_ID
 
     return commands.check(predicate)
-
-
-# ------------------------------------------------------------------------------
-# ------------------------------------------------------------------------------
-# Other Methods - Non Commands
-# ------------------------------------------------------------------------------
-
-def name(member):
-    # A helper function to return the member's display name
-    nick = name = None
-    try:
-        nick = member.nick
-    except AttributeError:
-        pass
-
-    try:
-        name = member.name
-    except AttributeError:
-        pass
-
-    if nick:
-        return nick
-    if name:
-        return name
-    return None
-
-
-async def is_live_show_happening(ctx):
-    show_channel = bot.get_channel(SHOW_CHANNEL_ID)
-    members = show_channel.members
-    member_ids = [member.id for member in members]
-
-    # Check if at least one host is in the live channel
-    hosts_in_channel = [host for host in HOST_IDS if host in member_ids]
-    if len(hosts_in_channel) > 0:
-        return True
-    else:
-        nonlive_channel = bot.get_channel(NONLIVE_CHANNEL_ID)
-        nonlive_msg = f'{ctx.author.mention} There is currently no live show. Please post your question in {nonlive_channel.mention} for the next show!'
-        await ctx.send(nonlive_msg)
-        return False
-
-
-def is_anyone_mentioned(ctx):
-    try:
-        mentioned_user = ctx.message.mentions[0]
-    except:
-        mentioned_user = None
-    return mentioned_user
-
-
-async def clean_and_add_livecallers(ctx, user=None):
-    # Clean Live Callers of any stale users
-    live_caller_role = discord.utils.find(lambda m: m.id == CALLER_ROLE_ID, ctx.guild.roles)
-    logging.info('Found Live Caller Role - %s', live_caller_role)
-    for member in live_caller_role.members:
-        if member != user:
-            msg_extra_live = f'FYI - I discovered that {member.name} was still in the Live Callers group while trying to add a new user. I have removed them now.'
-            await ctx.send(msg_extra_live)
-            await member.remove_roles(live_caller_role)
-
-    # Add Requested User to Live Caller Role
-    await user.add_roles(live_caller_role)
-
-
-async def clean_livecallers(ctx):
-    # Clean Live Callers of any stale users
-    live_caller_role = discord.utils.find(lambda m: m.id == CALLER_ROLE_ID, ctx.guild.roles)
-    logging.info('Found Live Caller Role - %s', live_caller_role)
-    for member in live_caller_role.members:
-        await member.remove_roles(live_caller_role)
-
-
-async def gather_caller_info(author):
-    # Implement wait_for check (is author & DM)
-    def check(m):
-        return m.author == author and isinstance(m.channel, discord.DMChannel)
-
-    await author.send("Thanks for wanting to call in. Before we get you on the line, let's get a few details.")
-
-    # Ask Question 1
-    await author.send("What should we call you?")
-    caller_name = await bot.wait_for('message', timeout=30, check=check)
-    caller_name = caller_name.content
-
-    # Ask Question 2
-    await author.send(f'Hey {caller_name} - where are you from?')
-    caller_location = await bot.wait_for('message', timeout=30, check=check)
-    caller_location = caller_location.content
-
-    # Ask Question 3
-    await author.send(f'Thanks for that {caller_name} - what would you like to discuss?')
-    caller_topic = await bot.wait_for('message', timeout=30, check=check)
-    caller_topic = caller_topic.content
-
-    # Send confirmation message
-    caller_details = f'{caller_name} from {caller_location} wants to talk about - {caller_topic}'
-    await author.send(f'We will send the following message to the live show screening channel.\n'
-                      f'`{caller_details}`\n\nIf this is correct, reply with the word YES.')
-    caller_confirm = await bot.wait_for('message', timeout=30, check=check)
-
-    if 'YES' in caller_confirm.content.upper():
-        e = discord.Embed(title='NEW CALLER ALERT!', description=caller_details)
-        # e.set_thumbnail(url=author.avatar_url)
-        e.add_field(name='\a', value='\a', inline=False)  # Blank line (empty field)
-        e.add_field(name='To add the caller:', value=f"!{config['COMMANDS']['answer']} {author.mention}", inline=False)
-        e.add_field(name='To remove the caller:', value=f"!{config['COMMANDS']['hangup']}", inline=False)
-
-        screening_channel = bot.get_channel(SCREENING_CHANNEL_ID)
-        await screening_channel.send(embed=e)
-        await author.send('Awesome - thanks! Your message has been sent '
-                          'and you will be notified when you are dialed into the live show!')
-
-    
-    
-async def serverCheck():
-    logging.info('Setting up server')
-    await channel_utils.channel_check(bot)
-    await role_utils.role_check(bot)
-    logging.info('Server setup complete')    
-    return
 
 
 # ------------------------------------------------------------------------------
@@ -239,13 +118,13 @@ async def on_voice_state_update(member, before, after):
 
     # If a Live Caller drops from a voice channel
     if after.channel != show_channel and is_live_caller:
-        msg_user_voice = f"Live Caller '{name(member)}' has dropped from the Live Show voice channel!"
+        msg_user_voice = f"Live Caller '{show_helper.name(member)}' has dropped from the Live Show voice channel!"
         await screening_channel.send(msg_user_voice)
         return
 
     # If a Live Caller joines the voice channel
     if after.channel == show_channel and is_live_caller:
-        msg_user_voice = f"Live Caller '{name(member)}' has joined the Live Show voice channel!"
+        msg_user_voice = f"Live Caller '{show_helper.name(member)}' has joined the Live Show voice channel!"
         await screening_channel.send(msg_user_voice)
 
 
@@ -255,12 +134,12 @@ async def on_voice_state_update(member, before, after):
 async def call(ctx):
     logging.info("Command '%s' detected in call-in channel (%s).", ctx.command.name, CALL_IN_CHANNEL_NAME)
     # Check if there is a Live Show in Progress
-    if not await is_live_show_happening(ctx):
+    if not await show_helper.is_live_show_happening(ctx):
         return
 
     # If there is a live show in progress, get caller information
     try:
-        await gather_caller_info(ctx.message.author)
+        await show_helper.gather_caller_info(ctx.message.author)
     except asyncio.TimeoutError:
         await ctx.message.author.send(f"We haven't heard from you in a while."
                                       f"If you'd like to call back in, please issue the `!call` command again!")
@@ -274,22 +153,22 @@ async def answer(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
 
     # Check if this command mentions anyone (invalid without a Member object)
-    user = is_anyone_mentioned(ctx)
+    user = show_helper.is_anyone_mentioned(ctx)
     if user is None:
         await ctx.send(f'{ctx.author.mention} you need to mention a user for this command to work properly.')
         return
 
     # Clean Live Callers & add requested user
-    await clean_and_add_livecallers(ctx, user)
+    await show_helper.clean_and_add_livecallers(ctx, user)
 
     # Check if user is listening to the live show
     show_channel = bot.get_channel(SHOW_CHANNEL_ID)
     live_listeners = show_channel.members
     if user in live_listeners:
-        add_msg = f'{name(user)} has been added to the Live Caller role and can speak in the voice channel.'
+        add_msg = f'{show_helper.name(user)} has been added to the Live Caller role and can speak in the voice channel.'
         msg_user_notify = f'You are now connected to the live show!'
     else:
-        add_msg = (f'{name(user)} has been added to the Live Caller role, but is not yet in the voice channel. '
+        add_msg = (f'{show_helper.name(user)} has been added to the Live Caller role, but is not yet in the voice channel. '
                    f'I will let you know when they join.')
         msg_user_notify = (f'You are now connected to the live show!'
                            f'Please be sure you are connected to the {show_channel.mention} channel to talk.')
@@ -306,7 +185,7 @@ async def hangup(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
 
     # Remove all members from the Live Callers role
-    await clean_livecallers(ctx)
+    await show_helper.clean_livecallers(ctx)
 
 
 @bot.command(name=config['COMMANDS']['start'])
@@ -314,7 +193,7 @@ async def hangup(ctx):
 @is_in_channel(SCREENING_CHANNEL_NAME)
 async def start_show(ctx):
     logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, SCREENING_CHANNEL_NAME)
-    await serverCheck()
+    await show_helper.serverCheck()
     perms = discord.PermissionOverwrite(
         connect=True,
         speak=False,
@@ -346,7 +225,7 @@ async def end_show(ctx):
         read_messages=False
     )
     await bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(ctx.guild.default_role, overwrite=perms)
-    await clean_livecallers(ctx)
+    await show_helper.clean_livecallers(ctx)
     if bot.voice_clients:
         for vc in bot.voice_clients:
             await vc.disconnect()
