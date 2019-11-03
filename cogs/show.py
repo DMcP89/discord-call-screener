@@ -12,9 +12,7 @@ import s3
 import podcast_utils
 import recording_utils
 
-dir_path = os.path.dirname(os.path.realpath(__file__))
-with open(os.path.dirname(dir_path)+'/config.json', 'r') as f:
-    config = json.load(f)
+
 
 recording_thread = None
 recording_buffer = recording_utils.BufSink()
@@ -22,9 +20,13 @@ recording_buffer = recording_utils.BufSink()
 
 class ShowCog(commands.Cog):
 
-    def __init__(self, bot):
+
+
+    def __init__(self, bot, helper, configs):
         self.bot = bot
-        self.helper = podcast_utils.show_helper(bot, config)
+        self.helper = helper
+        self.configs = configs
+
 
     
     def start_recordiing(self,show_channel):
@@ -36,10 +38,10 @@ class ShowCog(commands.Cog):
         self.bot.voice_clients[0].listen(recording_buffer)
         return   
     
-    @commands.command(name=config['COMMANDS']['start'])
-    @commands.has_role(config['ROLES']['HOST']['id'])
+    @commands.command(name='startshow')
+    @commands.has_role('podcast-host')
     async def start_show(self,ctx):
-        logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, config['CHANNELS']['SCREENING']['name'])
+        logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, self.configs['CHANNELS']['SCREENING']['name'])
         await self.helper.serverCheck()
         perms = discord.PermissionOverwrite(
             connect=True,
@@ -51,15 +53,15 @@ class ShowCog(commands.Cog):
             priority_speaker=False,
             read_messages=True
         )
-        await self.bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(ctx.guild.default_role, overwrite=perms)
-        await self.bot.get_channel(config['CHANNELS']['VOICE']['id']).connect()
-        self.start_recordiing(self.bot.get_channel(config['CHANNELS']['VOICE']['id']))
+        await self.bot.get_channel(self.configs['CHANNELS']['VOICE']['id']).set_permissions(ctx.guild.default_role, overwrite=perms)
+        await self.bot.get_channel(self.configs['CHANNELS']['VOICE']['id']).connect()
+        self.start_recordiing(self.bot.get_channel(self.configs['CHANNELS']['VOICE']['id']))
 
 
-    @commands.command(name=config['COMMANDS']['end'])
-    @commands.has_role(config['ROLES']['HOST']['id'])
+    @commands.command(name='endshow')
+    @commands.has_role('podcast-host')
     async def end_show(self, ctx):
-        logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, config['CHANNELS']['SCREENING']['name'])
+        logging.info("Command '%s' detected in call screening channel (%s).", ctx.command.name, self.configs['CHANNELS']['SCREENING']['name'])
         perms = discord.PermissionOverwrite(
             connect=False,
             speak=False,
@@ -70,7 +72,7 @@ class ShowCog(commands.Cog):
             priority_speaker=False,
             read_messages=False
         )
-        await self.bot.get_channel(config['CHANNELS']['VOICE']['id']).set_permissions(ctx.guild.default_role, overwrite=perms)
+        await self.bot.get_channel(self.configs['CHANNELS']['VOICE']['id']).set_permissions(ctx.guild.default_role, overwrite=perms)
         await self.helper.clean_livecallers(ctx)
         if self.bot.voice_clients:
             for vc in self.bot.voice_clients:

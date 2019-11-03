@@ -11,6 +11,9 @@ from threading import Thread
 
 # local imports
 import podcast_utils
+from cogs.show import ShowCog
+from cogs.caller import CallerCog
+from cogs.error import ErrorCog
 
 
 description = 'A Discord call-screening bot for live radio shows.'
@@ -28,26 +31,21 @@ SHOW_CHANNEL_ID = config['CHANNELS']['VOICE']['id']
 # Below cogs represents our folder our cogs are in.
 # Following is the file name. So 'meme.py' in cogs, would be cogs.meme
 # Think of it like a dot path import
-initial_extensions = ['cogs.error', 'cogs.caller', 'cogs.show']
+initial_extensions = ['cogs.error']
 
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(name)s - %(message)s'
 )
 
+
 bot = commands.Bot(command_prefix='!', description=description)
 
 show_helper = podcast_utils.show_helper(bot, config)
 
-# Here we load our extensions(cogs) listed above in [initial_extensions].
-if __name__ == '__main__':
-    for extension in initial_extensions:
-        try:
-            bot.load_extension(extension)
-        except Exception as e:
-            logging.error("Failed to load extension %s.", extension)
-            traceback.print_exc()
-
+bot.add_cog(ErrorCog(bot))
+bot.add_cog(ShowCog(bot, show_helper, config))
+bot.add_cog(CallerCog(bot, show_helper, config))
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 # Bot Commands
