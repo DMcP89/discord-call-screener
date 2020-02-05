@@ -112,7 +112,7 @@ venv.bak/
 bot.pid
 bot.log
 nohup.out
-sound.wav
+*.wav
 
 # VS Code
 .vscode
