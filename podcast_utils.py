@@ -33,12 +33,9 @@ class show_helper:
 
     async def is_live_show_happening(self, ctx):
         show_channel = self.bot.get_channel(self.configs['CHANNELS']['VOICE']['id'])
-        members = show_channel.members
-        member_ids = [member.id for member in members]
-
         # Check if at least one host is in the live channel
-        hosts_in_channel = [host for host in self.configs['HOSTS'] if host in member_ids]
-        if len(hosts_in_channel) > 0:
+        hosts_in_channel = list(filter(lambda member: [role for role in member.roles if role.name == self.configs['ROLES']['HOST']['name']], show_channel.members))
+        if hosts_in_channel:
             return True
         else:
             nonlive_channel = self.bot.get_channel(self.configs['CHANNELS']['NONLIVE']['id'])
@@ -46,6 +43,7 @@ class show_helper:
             await ctx.send(nonlive_msg)
             return False
     
+
     def is_anyone_mentioned(self, ctx):
         try:
             mentioned_user = ctx.message.mentions[0]
