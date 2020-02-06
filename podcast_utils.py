@@ -34,7 +34,7 @@ class show_helper:
     async def is_live_show_happening(self, ctx):
         show_channel = self.bot.get_channel(self.configs['CHANNELS']['VOICE']['id'])
         # Check if at least one host is in the live channel
-        hosts_in_channel = list(filter(lambda member: [role for role in member.roles if role.name == self.configs['ROLES']['HOST']['name']], show_channel.members))
+        hosts_in_channel = list(filter(lambda member: [role for role in member.roles if role.id == self.configs['ROLES']['HOST']['id']], show_channel.members))
         if hosts_in_channel:
             return True
         else:
@@ -103,8 +103,8 @@ class show_helper:
             e = discord.Embed(title='NEW CALLER ALERT!', description=caller_details)
             # e.set_thumbnail(url=author.avatar_url)
             e.add_field(name='\a', value='\a', inline=False)  # Blank line (empty field)
-            e.add_field(name='To add the caller:', value=f"!{self.configs['COMMANDS']['answer']} {author.mention}", inline=False)
-            e.add_field(name='To remove the caller:', value=f"!{self.configs['COMMANDS']['hangup']}", inline=False)
+            e.add_field(name='To add the caller:', value=f"!answer {author.mention}", inline=False)
+            e.add_field(name='To remove the caller:', value=f"!hangup", inline=False)
 
             screening_channel = self.bot.get_channel(self.configs['CHANNELS']['SCREENING']['id'])
             await screening_channel.send(embed=e)

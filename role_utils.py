@@ -7,11 +7,11 @@ import discord
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-with open(dir_path+'/config.json', 'r') as f:
+with open(dir_path+'/client_config.json', 'r') as f:
     config = json.load(f)
 
-TOKEN = config['AUTH']['TOKEN']
-SERVER_ID = config['SERVER']['ID']
+TOKEN = config['TOKEN']
+SERVER_ID = config['GUILD']
 ROLES = config['ROLES']
 
 HOST_ROLE_ID = config['ROLES']['HOST']['id']
@@ -80,7 +80,7 @@ async def create_missing_roles(missing_roles, bot):
                     priority_speaker=True,
                     read_messages=True
                 )
-                new_role = await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
+                new_role = await bot.get_guild(config['GUILD']).create_role(name=role_name)
                 global HOST_ROLE_ID
                 HOST_ROLE_ID = new_role.id
             else:
@@ -94,7 +94,7 @@ async def create_missing_roles(missing_roles, bot):
                     priority_speaker=False,
                     read_messages=True
                 )
-                new_role = await bot.get_guild(config['SERVER']['ID']).create_role(name=role_name)
+                new_role = await bot.get_guild(config['GUILD']).create_role(name=role_name)
                 global CALLER_ROLE_ID
                 CALLER_ROLE_ID = new_role.id
             update_config_file_role_ids()

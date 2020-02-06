@@ -21,8 +21,7 @@ from cogs.error import ErrorCog
 description = 'A Discord call-screening bot for live radio shows.'
 
 
-config_file = '/config.json'
-dir_path = os.path.dirname(os.path.realpath(__file__))
+config_file = '/client_config.json'
 # print('dir_path: '+dir_path)
 # with open(dir_path+config_file, 'r') as f:
 #     config = json.load(f)
@@ -48,8 +47,6 @@ bot = commands.Bot(command_prefix='!', description=description)
 show_helper = None
 
 
-
-
 def parse_options(opts):
     for opt, arg in opts:
         if opt == '-h':
@@ -61,25 +58,22 @@ def parse_options(opts):
             
 
 def load_config_file(config_file):
-    
+    dir_path = os.path.dirname(os.path.realpath(__file__))
     with open(dir_path+config_file, 'r') as f:
         config = json.load(f)
+    set_globals(config)
+    return config
 
+
+def set_globals(config):
     global TOKEN
-    TOKEN = config['AUTH']['TOKEN']
+    TOKEN = config['TOKEN']
     global CALLER_ROLE_ID
     CALLER_ROLE_ID = config['ROLES']['CALLER']['id']
     global SCREENING_CHANNEL_ID
     SCREENING_CHANNEL_ID = config['CHANNELS']['SCREENING']['id']
     global SHOW_CHANNEL_ID
     SHOW_CHANNEL_ID = config['CHANNELS']['VOICE']['id']
-
-    global show_helper
-    show_helper = podcast_utils.show_helper(bot, config)
-
-    bot.add_cog(ErrorCog(bot))
-    bot.add_cog(ShowCog(bot, show_helper, config))
-    bot.add_cog(CallerCog(bot, show_helper, config))
 
 
 def main(argv):
@@ -89,7 +83,13 @@ def main(argv):
         print('discord_podcast_bot -c <configfile>')
         sys.exit(2)
     parse_options(opts)
-    load_config_file(config_file)
+    config  = load_config_file(config_file)
+    global show_helper
+    show_helper = podcast_utils.show_helper(bot, config)
+
+    bot.add_cog(ErrorCog(bot))
+    bot.add_cog(ShowCog(bot, show_helper, config))
+    bot.add_cog(CallerCog(bot, show_helper, config))
     bot.run(TOKEN, bot=True, reconnect=True)
 
 # ------------------------------------------------------------------------------
