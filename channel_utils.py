@@ -6,7 +6,7 @@ import json
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
-with open(dir_path+'/config.json', 'r') as f:
+with open(dir_path+'/client_config.json', 'r') as f:
     config = json.load(f)
     
 logging.basicConfig(
@@ -28,7 +28,7 @@ CALLER_ROLE_ID = config['ROLES']['CALLER']['id']
 
 
 async def channel_check(bot):
-    guild = bot.get_guild(config['SERVER']['ID'])
+    guild = bot.get_guild(config['GUILD'])
 
     global CALL_IN_CHANNEL_ID
     global NONLIVE_CHANNEL_ID
@@ -90,7 +90,7 @@ def update_config_file_channel_ids():
     
 async def add_bot_to_channel(bot):
     bot_info = await bot.application_info()
-    bot_user = bot.get_guild(config['SERVER']['ID']).get_member(bot_info.id)
+    bot_user = bot.get_guild(config['GUILD']).get_member(bot_info.id)
     live_channel =bot.get_channel(config['CHANNELS']['VOICE']['id'])
     channel_roles = live_channel.overwrites
     for role in channel_roles:

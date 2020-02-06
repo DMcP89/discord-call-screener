@@ -4,7 +4,7 @@ import json
 
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-with open(dir_path+'/config.json', 'r') as f:
+with open(dir_path+'/bot_config.json', 'r') as f:
     config = json.load(f)
 
 ACCESS_KEY = config["S3"]["ACCESS_KEY_ID"]
