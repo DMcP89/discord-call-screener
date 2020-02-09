@@ -45,7 +45,7 @@ async def channel_check(bot):
         overwrites = {
             guild.default_role: discord.PermissionOverwrite().from_pair(discord.Permissions.none(), discord.Permissions.all()),
             guild.me: discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649)),
-            #guild.get_role(config['ROLES']['HOST']['id']): discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649))
+            guild.get_role(config['ROLES']['HOST']['id']): discord.PermissionOverwrite().from_pair(discord.Permissions(384064), discord.Permissions(805445649))
         }
         screening_channel = await guild.create_text_channel(config['CHANNELS']['SCREENING']['name'], overwrites=overwrites)
         config['CHANNELS']['SCREENING']['id'] = screening_channel.id
