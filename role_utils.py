@@ -18,24 +18,13 @@ def load_config():
         config = json.load(f)
     return config
 
-def get_roles_from_server(guild_id, token):
-    url = 'https://discordapp.com/api/guilds/'+str(guild_id)+'/roles'
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (compatible; Rigor/1.0.0; http://rigor.com)',
-        'Authorization': 'Bot '+token
-    }
-    response = requests.get(url, headers=headers)
-    roles_data = json.loads(response.text)
-    return roles_data
-
-
-def find_roles(config):
+def check_if_roles_are_missing(config, roles):
     caller_found = False
     host_found = False
-    for role in get_roles_from_server( config['GUILD'], config['TOKEN']):
-        if role['id'] == str(config['ROLES']['HOST']['id']):
+    for role in roles:
+        if role.id == config['ROLES']['HOST']['id']:
             host_found = True
-        elif role['id'] == str(config['ROLES']['CALLER']['id']):
+        elif role.id == config['ROLES']['CALLER']['id']:
             caller_found = True
     if caller_found and host_found:
         return {}
@@ -47,7 +36,8 @@ def find_roles(config):
 async def role_check(bot):
     logging.info("Checking if roles are available")
     config = load_config()
-    missing_roles = find_roles(config)
+    roles = bot.get_guild(config['GUILD']).roles
+    missing_roles = check_if_roles_are_missing(config, roles)
     if missing_roles:
         logging.info("Roles are missing!")
         await create_missing_roles(missing_roles, bot, config)
