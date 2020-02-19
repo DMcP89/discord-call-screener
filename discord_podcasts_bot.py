@@ -86,7 +86,8 @@ def main(argv):
     config  = load_config_file(config_file)
     global show_helper
     show_helper = podcast_utils.show_helper(bot, config)
-
+    if not discord.opus.is_loaded():
+            discord.opus.load_opus('libopus.so.0')
     bot.add_cog(ErrorCog(bot))
     bot.add_cog(ShowCog(bot, show_helper, config))
     bot.add_cog(CallerCog(bot, show_helper, config))
