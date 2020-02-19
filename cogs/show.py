@@ -10,12 +10,8 @@ from threading import Thread
 
 import s3
 import podcast_utils
-import recording_utils
 
-
-
-recording_thread = None
-recording_buffer = recording_utils.BufSink()
+recording_filename = ""
 
 
 class ShowCog(commands.Cog):
@@ -30,12 +26,9 @@ class ShowCog(commands.Cog):
 
     
     def start_recordiing(self,show_channel):
-        global recording_thread
-        recording_filename = show_channel.name + "-" +time.strftime("%Y%m%d-%H%M%S")+ ".wav"
-        if recording_thread is None:
-            recording_thread = Thread(target=recording_utils.poster, args=(self.bot, recording_buffer, recording_filename))
-            recording_thread.start()   
-        self.bot.voice_clients[0].listen(recording_buffer)
+        global recording_filename
+        recording_filename = show_channel.name + "-" +time.strftime("%Y%m%d-%H%M%S")+ ".wav" 
+        self.bot.voice_clients[0].listen(discord.WaveSink(recording_filename))
         return   
     
     @commands.command(name='startshow')
@@ -76,11 +69,10 @@ class ShowCog(commands.Cog):
         await self.helper.clean_livecallers(ctx)
         if self.bot.voice_clients:
             for vc in self.bot.voice_clients:
+                vc.stop_listening()
                 await vc.disconnect()
-            recording_utils.recording_finished_flag = True
-            global recording_thread
-            recording_thread.join()
-            s3.save_recording_to_bucket("discord-recordings-dev", recording_utils.recording_filename)
+            global recording_filename
+            s3.save_recording_to_bucket("discord-recordings-dev", recording_filename)
 
 def setup(bot):
     bot.add_cog(ShowCog(bot))
